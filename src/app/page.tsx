@@ -1,45 +1,92 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import SettingsBar from "@/components/SettingsBar";
 import TypingArea from "@/components/TypingArea";
 import VirtualKeyboard from "@/components/VirtualKeyboard";
-
-const SAMPLE_TEXT = "As the sun dipped behind the quiet horizon, I reminded myself that progress is built through small, consistent steps, and even on days when motivation fades, showing up with discipline shapes the confidence and skill needed to chase bigger goals.";
+import { generateText, Mode } from "@/utils/textGenerator";
 
 export default function Home() {
+  // Settings State
+  const [mode, setMode] = useState<Mode>("Time");
+  const [timeConfig, setTimeConfig] = useState("30s");
+  const [keyboardEnabled, setKeyboardEnabled] = useState("ON");
+
+  // Game State
+  const [text, setText] = useState("");
   const [userInput, setUserInput] = useState("");
   const [timeLeft, setTimeLeft] = useState(30);
   const [isActive, setIsActive] = useState(false);
-  const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [activeKeys, setActiveKeys] = useState<string[]>([]);
+  
+  // Refs for timers and intervals
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize Game
+  const initGame = useCallback(() => {
+    const newText = generateText(mode, mode === "Words" ? 50 : 30);
+    setText(newText);
+    setUserInput("");
+    setIsActive(false);
+    setIsFinished(false);
+    
+    // Parse time config
+    const timeValue = parseInt(timeConfig.replace("s", ""));
+    setTimeLeft(timeValue);
+    
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, [mode, timeConfig]);
+
+  // Reset when settings change
+  useEffect(() => {
+    initGame();
+  }, [initGame]);
 
   // Timer Logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+    if (isActive && timeLeft > 0 && mode === "Time") {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsFinished(true);
+            setIsActive(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0) {
-      setIsActive(false);
-      setIsFinished(true);
     }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isActive, timeLeft, mode]);
+
+  // Check for completion (Words/Quote/Code mode)
+  useEffect(() => {
+    if (mode !== "Time" && userInput.length === text.length && text.length > 0) {
+      setIsFinished(true);
+      setIsActive(false);
+    }
+  }, [userInput, text, mode]);
 
   // Key Handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (isFinished) return;
 
-    // Prevent default for some keys to avoid browser shortcuts if needed
-    // e.preventDefault(); // Be careful with this
+    // Ignore modifier keys alone
+    if (["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"].includes(e.key)) return;
 
     const key = e.key.toUpperCase();
-    setActiveKeys((prev) => [...prev, key]);
+    setActiveKeys((prev) => {
+      if (!prev.includes(key)) return [...prev, key];
+      return prev;
+    });
 
-    if (!isActive && /^[a-zA-Z0-9,.'";:?<>\[\]{}\\/!@#$%^&*()_+\-= ]$/.test(e.key)) {
+    // Start game on first keypress
+    if (!isActive && !isFinished) {
       setIsActive(true);
     }
 
@@ -47,11 +94,12 @@ export default function Home() {
       setUserInput((prev) => prev.slice(0, -1));
     } else if (e.key.length === 1) {
       setUserInput((prev) => {
-        if (prev.length >= SAMPLE_TEXT.length) return prev;
+        // Prevent typing beyond text length
+        if (prev.length >= text.length) return prev;
         return prev + e.key;
       });
     }
-  }, [isActive, isFinished]);
+  }, [isActive, isFinished, text]);
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     const key = e.key.toUpperCase();
@@ -67,27 +115,29 @@ export default function Home() {
     };
   }, [handleKeyDown, handleKeyUp]);
 
-  const handleRestart = () => {
-    setUserInput("");
-    setTimeLeft(30);
-    setIsActive(false);
-    setIsFinished(false);
-  };
-
   return (
     <main className="h-screen overflow-hidden flex flex-col max-w-6xl mx-auto px-4 pb-12">
       <Navbar />
-      <SettingsBar />
+      <SettingsBar 
+        mode={mode} 
+        setMode={setMode} 
+        time={timeConfig} 
+        setTime={setTimeConfig}
+        keyboard={keyboardEnabled}
+        setKeyboard={setKeyboardEnabled}
+      />
       
       <div className="flex-1 flex flex-col justify-center">
         <TypingArea 
-          text={SAMPLE_TEXT} 
+          text={text} 
           userInput={userInput} 
           timeLeft={timeLeft}
-          onRestart={handleRestart}
+          onRestart={initGame}
         />
         
-        <VirtualKeyboard activeKeys={activeKeys} />
+        {keyboardEnabled === "ON" && (
+          <VirtualKeyboard activeKeys={activeKeys} />
+        )}
       </div>
     </main>
   );
