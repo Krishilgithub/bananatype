@@ -5,13 +5,17 @@ interface TypingAreaProps {
   userInput: string;
   timeLeft: number;
   onRestart: () => void;
+  isFocused?: boolean;
 }
 
-export default function TypingArea({ text, userInput, timeLeft, onRestart }: TypingAreaProps) {
+export default function TypingArea({ text, userInput, timeLeft, onRestart, isFocused }: TypingAreaProps) {
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto mt-12 mb-8">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto mt-12 mb-8 relative">
       {/* Timer */}
-      <div className="text-4xl font-medium text-banana-active mb-8 font-mono">
+      <div className={clsx(
+        "text-4xl font-medium text-banana-active mb-8 font-mono transition-opacity duration-500",
+        isFocused ? "opacity-100" : "opacity-70"
+      )}>
         {timeLeft}s
       </div>
 
@@ -27,17 +31,21 @@ export default function TypingArea({ text, userInput, timeLeft, onRestart }: Typ
               key={index}
               className={clsx(
                 // Base style
-                "transition-colors duration-75",
+                "transition-colors duration-75 relative",
                 // Typed correct
                 isTyped && isCorrect && "text-banana-dark",
                 // Typed error
                 isTyped && !isCorrect && "text-banana-error",
                 // Untyped
                 !isTyped && "text-banana-text opacity-60",
-                // Current cursor (blinking or solid highlight)
-                isCurrent && "bg-banana-active/50 rounded-sm animate-pulse text-banana-dark"
               )}
             >
+              {/* Caret */}
+              {isCurrent && (
+                <span className="absolute left-0 -top-1 bottom-1 w-[2px] bg-banana-active animate-pulse rounded-full shadow-[0_0_10px_rgba(255,218,185,0.8)] z-10" />
+              )}
+              
+              {/* Character */}
               {char}
             </span>
           );

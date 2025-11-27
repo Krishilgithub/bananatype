@@ -4,11 +4,21 @@ import { useState } from "react";
 import { X, Volume2, VolumeX } from "lucide-react";
 import clsx from "clsx";
 
-export default function Navbar() {
+interface NavbarProps {
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  onNavigate: (page: string) => void;
+}
+
+export default function Navbar({ soundEnabled, setSoundEnabled, onNavigate }: NavbarProps) {
   const [activeLink, setActiveLink] = useState("Settings");
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const links = ["Profile", "Settings", "Dashboard", "Leaderboard", "Multiplayer"];
+
+  const handleNavClick = (link: string) => {
+    setActiveLink(link);
+    onNavigate(link);
+  };
 
   return (
     <nav className="flex items-center justify-between py-8 px-4">
@@ -33,7 +43,7 @@ export default function Navbar() {
           {links.map((link, index) => (
             <div key={link} className="flex items-center gap-6">
               <button
-                onClick={() => setActiveLink(link)}
+                onClick={() => handleNavClick(link)}
                 className={clsx(
                   "transition-colors",
                   activeLink === link ? "text-banana-bg font-bold" : "hover:text-banana-bg"

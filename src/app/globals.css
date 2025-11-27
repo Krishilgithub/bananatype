@@ -1,11 +1,44 @@
 @import "tailwindcss";
 
+:root {
+  /* Default (Banana) */
+  --banana-bg: #FFDAB9;
+  --banana-dark: #3E1F0F;
+  --banana-text: #EFA686;
+  --banana-active: #D2B48C;
+  --banana-error: #FF4444;
+}
+
+[data-theme="Dark"] {
+  --banana-bg: #18181b;
+  --banana-dark: #f4f4f5;
+  --banana-text: #71717a;
+  --banana-active: #e4e4e7;
+  --banana-error: #ef4444;
+}
+
+[data-theme="Matrix"] {
+  --banana-bg: #000000;
+  --banana-dark: #00ff41;
+  --banana-text: #003b00;
+  --banana-active: #008f11;
+  --banana-error: #ff0000;
+}
+
+[data-theme="Retro"] {
+  --banana-bg: #fdf6e3;
+  --banana-dark: #657b83;
+  --banana-text: #93a1a1;
+  --banana-active: #2aa198;
+  --banana-error: #dc322f;
+}
+
 @theme {
-  --color-banana-bg: #FFDAB9;
-  --color-banana-dark: #3E1F0F;
-  --color-banana-text: #EFA686;
-  --color-banana-active: #D2B48C;
-  --color-banana-error: #FF4444;
+  --color-banana-bg: var(--banana-bg);
+  --color-banana-dark: var(--banana-dark);
+  --color-banana-text: var(--banana-text);
+  --color-banana-active: var(--banana-active);
+  --color-banana-error: var(--banana-error);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-roboto-mono);
@@ -14,5 +47,6 @@
 body {
   background-color: var(--color-banana-bg);
   color: var(--color-banana-dark);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
